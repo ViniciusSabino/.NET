@@ -22,7 +22,7 @@ namespace ByteBank.View
             r_Servico = new ContaClienteService();
         }
 
-        // Método Assíncrono 
+        // Método que será executado de forma Assíncrona 
         private async void BtnProcessar_Click(object sender, RoutedEventArgs e)
         {
             var contas = r_Repositorio.GetContaClientes();
@@ -33,11 +33,11 @@ namespace ByteBank.View
 
             var inicio = DateTime.Now;
 
-            // A Thread principal só irá seguir o seu processo se a tarefa de consolidar as contas terminar 
-            // Usando await além de ter essa espera, o resultado da task pode ser atrubuido a uma variavel (resultado)
+            // A Thread principal só irá seguir o seu processo se a tarefa de consolidar as contas for concluída  
+            // Usando await além de ter essa espera, o resultado da task pode ser atrubuida a uma variavel, ou seja o resultado da tarefa
             var resultado = await ConsolidarContas(contas);
 
-            // Após a task for concluida segue o fluxo normalmente
+            // Após a task for concluída o fluxo irá seguir normalmente 
             var fim = DateTime.Now;
 
             AtualizarView(resultado, fim - inicio);
@@ -45,20 +45,19 @@ namespace ByteBank.View
             BtnProcessar.IsEnabled = true; 
         }
 
-        // Tarefa de consolidar contas tambem é executada de forma assíncrona 
+        // A tarefa de consolidar contas tambem é executada de forma assíncrona e retorna uma tarefa que retorna um array de strings 
         public async Task<string[]> ConsolidarContas(IEnumerable<ContaCliente> contas)
         {
             var resultado = new List<string>();
 
-            // Para cada conta da lista, eu crio uma task e já inicio, cada task irá consolidar uma conta da lista 
-            // e retornar uma String (conta consolidada)
-            // a task criada será armazenada nesse array de tasks
+            // Para cada conta da lista, eu crio uma task e já a inicio, cada task irá consolidar uma conta dessa lista e retornar uma String (conta consolidada)
+            // a task criada será armazenada em um array de tasks
             var tasks = contas.Select(conta =>
                 Task.Factory.StartNew(() => r_Servico.ConsolidarMovimentacao(conta)));
 
-            // com await => Quando todas as tasks terminarem eu retorno o resultado de todas as tarefas
-            // (Como é um array de tarefas, o resultado final será tmb um array de resultados (String que representa uma conta consolidada)
-            return await Task.WhenAll(tasks);
+            // com await => segue o fluxo desse método até que todas as tasks do array terminem o seu processo 
+            // (Como é um array de tarefas, o resultado final será tmb um array de resultados (Strings que representa uma conta consolidada)
+            return await Task.WhenAll(tasks); // Retorna uma tarefa que devolve um array de contas consolidadas
         }
 
         private void AtualizarView(IEnumerable<string> result, TimeSpan elapsedTime)
